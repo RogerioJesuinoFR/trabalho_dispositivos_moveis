@@ -1,104 +1,76 @@
 import 'package:flutter/material.dart';
-import '../controllers/user_controller.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/auth_viewmodel.dart';
 
 class LoginPage extends StatefulWidget {
-  final UserController userController;
-
-  const LoginPage({Key? key, required this.userController}) : super(key: key);
-
+  const LoginPage({super.key});
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  String _username = '';
-  String _password = '';
-  String _error = '';
-  bool _obscurePassword = true;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool isLogin = true;
+
+  void _submit(AuthViewModel viewModel) async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      final success = isLogin
+          ? await viewModel.login(email, password)
+          : await viewModel.register(email, password);
+
+      if (success && context.mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthViewModel>(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: Text(isLogin ? "Login" : "Cadastro")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
+              if (auth.errorMessage != null)
+                Text(auth.errorMessage!, style: TextStyle(color: Colors.red)),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Usuário'),
-                validator: (value) => value == null || value.isEmpty ? 'Informe o usuário' : null,
-                onSaved: (value) => _username = value!,
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'E-mail'),
+                validator: (value) =>
+                    value!.contains('@') ? null : 'E-mail inválido',
               ),
               TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: _obscurePassword,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe a senha';
-                  }
-                  if (!_validatePassword(value)) {
-                    return 'Senha inválida';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _password = value!,
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Senha'),
+                obscureText: true,
+                validator: (value) =>
+                    value!.length >= 6 ? null : 'Mínimo 6 caracteres',
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _login,
-                child: const Text('Entrar'),
+                onPressed: () => _submit(auth),
+                child: Text(isLogin ? "Entrar" : "Cadastrar"),
               ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: const Text('Cadastrar-se'),
+              TextButton(
+                onPressed: () => setState(() => isLogin = !isLogin),
+                child: Text(isLogin
+                    ? "Não tem conta? Cadastre-se"
+                    : "Já tem conta? Faça login"),
               ),
-              if (_error.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    _error,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                )
             ],
           ),
         ),
       ),
     );
-  }
-
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      bool success = widget.userController.login(_username, _password);
-      if (success) {
-        Navigator.pushReplacementNamed(context, '/statistics');
-      } else {
-        setState(() {
-          _error = 'Usuário ou senha incorretos.';
-        });
-      }
-    }
-  }
-
-  bool _validatePassword(String password) {
-    final regex = RegExp(r'^(?=.*[A-Z])(?=.*[!@#\$&*~]).{8,}$');
-    return regex.hasMatch(password);
   }
 }

@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
-import 'controllers/user_controller.dart';
-import 'views/login_page.dart';
-import 'views/register_page.dart';
-import 'views/statistics_page.dart';
+import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
-  runApp(MyApp());
+import 'viewmodels/auth_viewmodel.dart';
+import 'views/login_page.dart';
+import 'views/home_page.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final UserController _userController = UserController();
-
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'App de Estatísticas Corporais',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => LoginPage(userController: _userController),
-        '/register': (context) => RegisterPage(userController: _userController),
-        '/statistics': (context) => StatisticsPage(userController: _userController),
-      },
+    return ChangeNotifierProvider(
+      create: (_) => AuthViewModel(),
+      child: MaterialApp(
+        title: 'IMC+ App',
+        theme: ThemeData(primarySwatch: Colors.teal),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const LoginPage(),
+          '/home': (context) => const HomePage(), // Ainda vamos criar
+        },
+      ),
     );
   }
 }

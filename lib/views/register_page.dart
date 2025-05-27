@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:imc_app/services/auth_service.dart';
 import 'package:imc_app/views/home_page.dart';
-import 'package:imc_app/views/register_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
 
   bool _isLoading = false;
 
-  void _login() async {
+  void _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      final success = await AuthService.login(
+      final success = await AuthService.register(
         _emailController.text.trim(),
         _passwordController.text.trim(),
+        _nameController.text.trim(),
       );
 
       setState(() {
@@ -37,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
             context, MaterialPageRoute(builder: (_) => const HomePage()));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Login falhou. Verifique suas credenciais.'),
+          content: Text('Cadastro falhou. Email já cadastrado.'),
         ));
       }
     }
@@ -46,13 +47,23 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Cadastro')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nome'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Insira seu nome';
+                  }
+                  return null;
+                },
+              ),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
@@ -80,16 +91,7 @@ class _LoginPageState extends State<LoginPage> {
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: _login, child: const Text('Entrar')),
-              const SizedBox(height: 10),
-              TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RegisterPage()));
-                  },
-                  child: const Text('Não tem uma conta? Cadastre-se'))
+                      onPressed: _register, child: const Text('Cadastrar')),
             ],
           ),
         ),
